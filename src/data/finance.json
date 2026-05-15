@@ -1,0 +1,20 @@
+{
+  "fixedBaseline": 63214,
+  "fixedCosts": [
+    { "category": "Housing", "description": "Rent", "amount": 58814 },
+    { "category": "Phone", "description": "Mobile bill", "amount": 2082 },
+    { "category": "Utilities", "description": "Home WiFi", "amount": 4400 }
+  ],
+  "balances": [
+    { "date": "2026-04-01", "travelCard": 820480, "bank": null, "cash": 15000 },
+    { "date": "2026-05-01", "travelCard": 778749, "bank": 392854, "cash": 4000 }
+  ],
+  "expenses": [
+    { "date": "2026-01-01", "category": "Housing", "description": "Rent - Apartment", "amount": 58814, "paidVia": "Bank", "notes": "Fixed monthly" },
+    { "date": "2026-01-01", "category": "Phone", "description": "Mobile bill", "amount": 2082, "paidVia": "Bank", "notes": "" },
+    { "date": "2026-01-01", "category": "Utilities", "description": "Home WiFi", "amount": 4400, "paidVia": "Bank", "notes": "Fixed monthly" },
+    { "date": "2026-01-01", "category": "Utilities", "description": "Electricity & Gas", "amount": 21097, "paidVia": "Bank", "notes": "" },
+    { "date": "2026-04-01", "category": "Food & Groceries", "description": "April food & groceries total", "amount": 47584, "paidVia": "Mixed", "notes": "Monthly total" }
+  ],
+  "income": []
+}

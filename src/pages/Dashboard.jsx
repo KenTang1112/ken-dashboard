@@ -1,27 +1,74 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { DEADLINES, TYPE_COLORS } from '../data/deadlines';
 import { TIMETABLE, PERIODS } from '../data/schedule';
+import { getNotes, addNote } from '../data/notes';
 
 function daysUntil(dateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
-  return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+  return Math.ceil((new Date(dateStr) - today) / (1000 * 60 * 60 * 24));
 }
 
 function CountdownBadge({ days }) {
-  if (days < 0) return <span className="badge badge-done">Done</span>;
+  if (days < 0)  return <span className="badge badge-done">Done</span>;
   if (days === 0) return <span className="badge badge-today">Today</span>;
-  if (days <= 3) return <span className="badge badge-urgent">{days}d</span>;
-  if (days <= 7) return <span className="badge badge-soon">{days}d</span>;
+  if (days <= 3)  return <span className="badge badge-urgent">{days}d</span>;
+  if (days <= 7)  return <span className="badge badge-soon">{days}d</span>;
   return <span className="badge badge-normal">{days}d</span>;
 }
 
 function todaySchedule() {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const dayName = days[new Date().getDay()];
-  return TIMETABLE[dayName] || [];
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  return TIMETABLE[days[new Date().getDay()]] || [];
+}
+
+function QuickNoteWidget() {
+  const [input, setInput] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [notes, setNotes] = useState(() => getNotes().filter(n => !n.processed).slice(0, 5));
+
+  function handleSave() {
+    if (!input.trim()) return;
+    const updated = addNote(input);
+    setNotes(updated.filter(n => !n.processed).slice(0, 5));
+    setInput('');
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSave();
+  }
+
+  return (
+    <>
+      <textarea
+        className="notes-textarea notes-textarea-sm"
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={handleKey}
+        placeholder="Quick note — processed by daily routine..."
+        rows={2}
+      />
+      <div className="notes-input-row" style={{ marginTop: 6 }}>
+        <button className={`btn-primary${saved?' btn-saved':''}`} onClick={handleSave} disabled={!input.trim()}>
+          {saved ? '✓ Saved' : 'Save Note'}
+        </button>
+        <Link to="/notes" className="card-link" style={{ marginLeft: 'auto' }}>All notes →</Link>
+      </div>
+      {notes.length > 0 && (
+        <div className="widget-notes-list">
+          {notes.map(n => (
+            <div key={n.id} className="widget-note-item">
+              <span className="widget-note-ts">{n.timestamp}</span>
+              <span className="widget-note-text">{n.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 export default function Dashboard() {
@@ -90,6 +137,12 @@ export default function Dashboard() {
           )}
         </section>
 
+        {/* Quick Note Widget */}
+        <section className="card">
+          <h2 className="card-title">📝 Quick Note</h2>
+          <QuickNoteWidget />
+        </section>
+
         {/* Deadlines This Week */}
         <section className="card span-2">
           <div className="card-title-row">
@@ -115,7 +168,7 @@ export default function Dashboard() {
             <Link to="/classes" className="quick-btn">📚 Classes</Link>
             <Link to="/kanji" className="quick-btn">漢 Kanji</Link>
             <Link to="/jlpt" className="quick-btn">🎯 JLPT</Link>
-            <Link to="/schedule" className="quick-btn">📅 Schedule</Link>
+            <Link to="/notes" className="quick-btn">📝 Notes</Link>
           </div>
         </section>
       </div>

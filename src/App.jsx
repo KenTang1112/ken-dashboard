@@ -7,17 +7,19 @@ import Kanji from './pages/Kanji';
 import JLPT from './pages/JLPT';
 import Research from './pages/Research';
 import Finance from './pages/Finance';
+import Notes from './pages/Notes';
 import './index.css';
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: '⚡' },
-  { to: '/schedule', label: 'Schedule', icon: '📅' },
-  { to: '/deadlines', label: 'Deadlines', icon: '🔴' },
-  { to: '/classes', label: 'Classes', icon: '📚' },
-  { to: '/kanji', label: 'Kanji', icon: '漢' },
-  { to: '/jlpt', label: 'JLPT N2', icon: '🎯' },
-  { to: '/research', label: 'Research', icon: '🔬' },
-  { to: '/finance', label: 'Finance', icon: '💰' },
+  { to: '/',         label: 'Dashboard', icon: '⚡' },
+  { to: '/schedule', label: 'Schedule',  icon: '📅' },
+  { to: '/deadlines',label: 'Deadlines', icon: '🔴' },
+  { to: '/classes',  label: 'Classes',   icon: '📚' },
+  { to: '/kanji',    label: 'Kanji',     icon: '漢' },
+  { to: '/jlpt',     label: 'JLPT N2',   icon: '🎯' },
+  { to: '/research', label: 'Research',  icon: '🔬' },
+  { to: '/finance',  label: 'Finance',   icon: '💰' },
+  { to: '/notes',    label: 'Notes',     icon: '📝' },
 ];
 
 function Sidebar() {
@@ -70,14 +72,15 @@ export default function App() {
         <Sidebar />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/"          element={<Dashboard />} />
+            <Route path="/schedule"  element={<Schedule />} />
             <Route path="/deadlines" element={<Deadlines />} />
-            <Route path="/classes" element={<Classes />} />
-            <Route path="/kanji" element={<Kanji />} />
-            <Route path="/jlpt" element={<JLPT />} />
-            <Route path="/research" element={<Research />} />
-            <Route path="/finance" element={<Finance />} />
+            <Route path="/classes"   element={<Classes />} />
+            <Route path="/kanji"     element={<Kanji />} />
+            <Route path="/jlpt"      element={<JLPT />} />
+            <Route path="/research"  element={<Research />} />
+            <Route path="/finance"   element={<Finance />} />
+            <Route path="/notes"     element={<Notes />} />
           </Routes>
         </main>
         <MobileNav />

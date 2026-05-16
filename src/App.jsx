@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
+import { FinanceAuthProvider, useFinanceAuth } from './context/FinanceAuthContext';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
 import Deadlines from './pages/Deadlines';
@@ -6,8 +7,12 @@ import Classes from './pages/Classes';
 import Kanji from './pages/Kanji';
 import JLPT from './pages/JLPT';
 import Research from './pages/Research';
-import Finance from './pages/Finance';
 import Notes from './pages/Notes';
+import PinLock from './pages/PinLock';
+import FinanceOverview from './pages/FinanceOverview';
+import FinanceTracker from './pages/FinanceTracker';
+import FinanceInvestments from './pages/FinanceInvestments';
+import FinanceNews from './pages/FinanceNews';
 import './index.css';
 
 const NAV = [
@@ -65,26 +70,43 @@ function MobileNav() {
   );
 }
 
+// Redirects to /finance/unlock if not authenticated, preserving the intended destination
+function FinanceRoute({ children }) {
+  const { authenticated } = useFinanceAuth();
+  const location = useLocation();
+  if (!authenticated) {
+    return <Navigate to="/finance/unlock" state={{ from: location.pathname }} replace />;
+  }
+  return children;
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <div className="app-layout">
-        <Sidebar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/"          element={<Dashboard />} />
-            <Route path="/schedule"  element={<Schedule />} />
-            <Route path="/deadlines" element={<Deadlines />} />
-            <Route path="/classes"   element={<Classes />} />
-            <Route path="/kanji"     element={<Kanji />} />
-            <Route path="/jlpt"      element={<JLPT />} />
-            <Route path="/research"  element={<Research />} />
-            <Route path="/finance"   element={<Finance />} />
-            <Route path="/notes"     element={<Notes />} />
-          </Routes>
-        </main>
-        <MobileNav />
-      </div>
-    </BrowserRouter>
+    <FinanceAuthProvider>
+      <BrowserRouter>
+        <div className="app-layout">
+          <Sidebar />
+          <main className="main-content">
+            <Routes>
+              <Route path="/"          element={<Dashboard />} />
+              <Route path="/schedule"  element={<Schedule />} />
+              <Route path="/deadlines" element={<Deadlines />} />
+              <Route path="/classes"   element={<Classes />} />
+              <Route path="/kanji"     element={<Kanji />} />
+              <Route path="/jlpt"      element={<JLPT />} />
+              <Route path="/research"  element={<Research />} />
+              <Route path="/notes"     element={<Notes />} />
+              {/* Finance — PIN protected */}
+              <Route path="/finance/unlock" element={<PinLock />} />
+              <Route path="/finance" element={<FinanceRoute><FinanceOverview /></FinanceRoute>} />
+              <Route path="/finance/tracker" element={<FinanceRoute><FinanceTracker /></FinanceRoute>} />
+              <Route path="/finance/investments" element={<FinanceRoute><FinanceInvestments /></FinanceRoute>} />
+              <Route path="/finance/news" element={<FinanceRoute><FinanceNews /></FinanceRoute>} />
+            </Routes>
+          </main>
+          <MobileNav />
+        </div>
+      </BrowserRouter>
+    </FinanceAuthProvider>
   );
 }

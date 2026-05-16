@@ -1,72 +1,65 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
-// TODO: replace PLACEHOLDER_NEWS with real Finnhub + Claude API calls
-// Suggested approach:
-//   1. GET https://finnhub.io/api/v1/news?category=general&token=YOUR_KEY
-//   2. Pass headlines to Claude API: summarize + classify sentiment
-//   3. Cache results in localStorage with a TTL of ~15 minutes
-const PLACEHOLDER_NEWS = [
-  {
-    ticker: 'NVDA',
-    headline: 'Fed signals rate pause — tech stocks rally on cooling inflation data',
-    summary: 'NVIDIA leads gains as investors price in fewer hikes through year-end.',
-    sentiment: 'bullish',
-    source: 'Reuters',
-    time: 'Placeholder',
-  },
-  {
-    ticker: 'USD/JPY',
-    headline: 'Yen weakens past 155 as BOJ holds ultra-loose policy stance',
-    summary: 'Bank of Japan reaffirms yield curve control; market watches 160 level.',
-    sentiment: 'neutral',
-    source: 'Bloomberg',
-    time: 'Placeholder',
-  },
-  {
-    ticker: '3382',
-    headline: '7-Eleven Holdings forecasts Q2 profit decline amid store-cost pressures',
-    summary: 'Rising labor and energy costs squeeze convenience sector margins in Japan.',
-    sentiment: 'bearish',
-    source: 'Nikkei',
-    time: 'Placeholder',
-  },
-];
+import { fetchNews } from '../data/news';
 
 const SENTIMENT_LABEL = { bullish: 'Bullish', bearish: 'Bearish', neutral: 'Neutral' };
 
 export default function FinanceNews() {
+  const [news, setNews]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState('');
+
+  useEffect(() => {
+    fetchNews(8)
+      .then(items => { setNews(items); setLoading(false); })
+      .catch(e    => { setError(e.message); setLoading(false); });
+  }, []);
+
   return (
     <div className="page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Market News</h1>
-          <p className="page-sub">Summaries &amp; sentiment — placeholder data</p>
+          <p className="page-sub">Live headlines via Yahoo Finance · refreshes every 15 min</p>
         </div>
         <Link to="/finance" className="btn-secondary">← Overview</Link>
       </div>
 
-      <div className="finance-flag">
-        Placeholder news — wire Finnhub + Claude API to replace these cards.
-      </div>
+      {loading && <p className="empty-state" style={{ padding: '40px 0', textAlign: 'center' }}>Loading news…</p>}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {PLACEHOLDER_NEWS.map((item, i) => (
-          <div key={i} className="card news-card">
-            <div className="news-card-header">
-              <span className="news-ticker">{item.ticker}</span>
-              <span className={`sentiment-tag sentiment-${item.sentiment}`}>
-                {SENTIMENT_LABEL[item.sentiment]}
-              </span>
-            </div>
-            <p className="news-headline">{item.headline}</p>
-            <p className="news-summary">{item.summary}</p>
-            <div className="news-meta">
-              <span className="news-source">{item.source}</span>
-              <span className="news-time">{item.time}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      {error && (
+        <div className="card" style={{ borderColor: '#FCA5A5', background: '#FFF5F5' }}>
+          <p style={{ color: 'var(--red)', fontSize: 13 }}>Could not load news: {error}</p>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {news.map((item, i) => (
+            <a
+              key={i}
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="card news-card"
+              style={{ textDecoration: 'none', color: 'inherit', display: 'block', transition: 'border-color 0.15s' }}
+            >
+              <div className="news-card-header">
+                {item.ticker && <span className="news-ticker">{item.ticker}</span>}
+                <span className={`sentiment-tag sentiment-${item.sentiment}`}>
+                  {SENTIMENT_LABEL[item.sentiment]}
+                </span>
+              </div>
+              <p className="news-headline">{item.headline}</p>
+              {item.summary && <p className="news-summary">{item.summary}</p>}
+              <div className="news-meta">
+                <span className="news-source">{item.source}</span>
+                <span className="news-time">{item.time}</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

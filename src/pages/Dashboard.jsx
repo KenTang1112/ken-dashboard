@@ -6,6 +6,7 @@ import { JLPT_SECTIONS } from '../data/jlpt';
 import { RESEARCH_PROJECTS, STATUS_META } from '../data/research';
 import { KANJI_LS_KEYS, QUIZ_SCHEDULE, getWeaknessScores, getKanjiProgress } from '../data/kanji';
 import { getNotes, addNote } from '../data/notes';
+import { fetchNews } from '../data/news';
 import { useFinanceAuth } from '../context/FinanceAuthContext';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -69,12 +70,6 @@ function loadFinanceSummary() {
   } catch { return null; }
 }
 
-// ── Placeholder news (same data as FinanceNews.jsx) ─────────────────────────
-const NEWS_PREVIEW = [
-  { ticker: 'NVDA',    headline: 'Fed signals rate pause — tech stocks rally', sentiment: 'bullish' },
-  { ticker: 'USD/JPY', headline: 'Yen weakens past 155 as BOJ holds policy',  sentiment: 'neutral' },
-  { ticker: '3382',    headline: '7-Eleven forecasts Q2 profit decline',       sentiment: 'bearish' },
-];
 
 // ── Quick Note (preserved from original dashboard) ───────────────────────────
 function QuickNoteWidget() {
@@ -310,17 +305,27 @@ function ResearchWidget() {
 }
 
 function NewsWidget() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchNews(3)
+      .then(data => { setItems(data); setLoading(false); })
+      .catch(()  => { setLoading(false); });
+  }, []);
+
   return (
     <WidgetCard to="/finance/news" icon="📰" title="Market News">
+      {loading && <p className="empty-state" style={{ fontSize: 11 }}>Loading…</p>}
+      {!loading && items.length === 0 && <p className="empty-state" style={{ fontSize: 11 }}>Could not load news</p>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {NEWS_PREVIEW.map((item, i) => (
+        {items.map((item, i) => (
           <div key={i} className="widget-news-row">
-            <span className="news-ticker" style={{ fontSize: 11 }}>{item.ticker}</span>
+            {item.ticker && <span className="news-ticker" style={{ fontSize: 11 }}>{item.ticker}</span>}
             <span style={{ flex: 1, fontSize: 12, color: 'var(--text)', lineHeight: 1.3 }}>{item.headline}</span>
             <span className={`sentiment-tag sentiment-${item.sentiment}`}>{item.sentiment}</span>
           </div>
         ))}
-        <p style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>Placeholder — real API coming soon</p>
       </div>
     </WidgetCard>
   );

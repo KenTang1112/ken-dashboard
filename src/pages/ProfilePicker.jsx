@@ -1,33 +1,12 @@
 import { useState } from 'react';
-import { AVATARS, getAvatar } from '../data/avatars';
+import { AVATARS } from '../data/avatars';
 import { useUser } from '../context/UserContext';
+import AvatarDisplay from '../components/AvatarDisplay';
 
 const USERS = [
   { id: 'ken',   displayName: 'Ken'   },
   { id: 'shoan', displayName: 'Shoan' },
 ];
-
-function AvatarCircle({ avatarId, size = 80 }) {
-  const av = getAvatar(avatarId);
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: av.bg,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: Math.round(size * 0.45),
-        userSelect: 'none',
-        flexShrink: 0,
-      }}
-    >
-      {av.emoji}
-    </div>
-  );
-}
 
 function AvatarPickerModal({ onSelect, onClose }) {
   return (
@@ -91,10 +70,10 @@ export default function ProfilePicker() {
 
   return (
     <div className="profile-picker-screen">
-      <h1 className="profile-picker-title">Who's watching?</h1>
+      <h1 className="profile-picker-title">Who's studying?</h1>
       <div className="profile-cards">
         {USERS.map(user => {
-          const avatarId = getStoredAvatar(user.id) || 'fox';
+          const avatarVal = getStoredAvatar(user.id) || 'fox';
           return (
             <button
               key={user.id}
@@ -102,7 +81,7 @@ export default function ProfilePicker() {
               onClick={() => handleCardClick(user)}
             >
               <div className="profile-avatar-ring">
-                <AvatarCircle avatarId={avatarId} size={96} />
+                <AvatarDisplay value={avatarVal} size={96} />
               </div>
               <span className="profile-card-name">{user.displayName}</span>
             </button>

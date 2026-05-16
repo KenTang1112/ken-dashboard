@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { FinanceAuthProvider, useFinanceAuth } from './context/FinanceAuthContext';
 import { UserProvider, useUser } from './context/UserContext';
-import { getAvatar } from './data/avatars';
 import ProfilePicker from './pages/ProfilePicker';
+import Profile from './pages/Profile';
+import AvatarDisplay from './components/AvatarDisplay';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
 import Deadlines from './pages/Deadlines';
@@ -28,6 +29,7 @@ const NAV = [
   { to: '/research', label: 'Research',  icon: '🔬' },
   { to: '/finance',  label: 'Finance',   icon: '💰' },
   { to: '/notes',    label: 'Notes',     icon: '📝' },
+  { to: '/profile',  label: 'Profile',   icon: '👤' },
 ];
 
 function Sidebar() {
@@ -76,17 +78,10 @@ function MobileNav() {
 
 function UserSwitchButton() {
   const { activeUser, logout } = useUser();
-  const avatarId = localStorage.getItem(`${activeUser}_avatar`) || 'fox';
-  const av = getAvatar(avatarId);
+  const avatarVal = localStorage.getItem(`${activeUser}_avatar`) || 'fox';
   return (
     <button className="user-switch-btn" onClick={logout} title="Switch profile">
-      <div style={{
-        width: 24, height: 24, borderRadius: '50%',
-        background: av.bg, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontSize: 13, flexShrink: 0,
-      }}>
-        {av.emoji}
-      </div>
+      <AvatarDisplay value={avatarVal} size={24} />
       <span className="user-switch-name">{activeUser}</span>
       <span className="user-switch-icon">⇄</span>
     </button>
@@ -127,6 +122,7 @@ function AppContent() {
             <Route path="/finance/tracker" element={<FinanceRoute><FinanceTracker /></FinanceRoute>} />
             <Route path="/finance/investments" element={<FinanceRoute><FinanceInvestments /></FinanceRoute>} />
             <Route path="/finance/news" element={<FinanceNews />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
         <MobileNav />

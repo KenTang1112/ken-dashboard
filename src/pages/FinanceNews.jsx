@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { useFinanceAuth } from '../context/FinanceAuthContext';
 
 // TODO: replace PLACEHOLDER_NEWS with real Finnhub + Claude API calls
 // Suggested approach:
@@ -36,8 +35,6 @@ const PLACEHOLDER_NEWS = [
 const SENTIMENT_LABEL = { bullish: 'Bullish', bearish: 'Bearish', neutral: 'Neutral' };
 
 export default function FinanceNews() {
-  const { lock } = useFinanceAuth();
-
   return (
     <div className="page">
       <div className="page-header">
@@ -45,10 +42,7 @@ export default function FinanceNews() {
           <h1 className="page-title">Market News</h1>
           <p className="page-sub">Summaries &amp; sentiment — placeholder data</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link to="/finance" className="btn-secondary">← Overview</Link>
-          <button className="btn-secondary" onClick={lock}>🔒</button>
-        </div>
+        <Link to="/finance" className="btn-secondary">← Overview</Link>
       </div>
 
       <div className="finance-flag">

@@ -101,7 +101,7 @@ export default function App() {
               <Route path="/finance" element={<FinanceRoute><FinanceOverview /></FinanceRoute>} />
               <Route path="/finance/tracker" element={<FinanceRoute><FinanceTracker /></FinanceRoute>} />
               <Route path="/finance/investments" element={<FinanceRoute><FinanceInvestments /></FinanceRoute>} />
-              <Route path="/finance/news" element={<FinanceRoute><FinanceNews /></FinanceRoute>} />
+              <Route path="/finance/news" element={<FinanceNews />} />
             </Routes>
           </main>
           <MobileNav />

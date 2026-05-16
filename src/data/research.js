@@ -5,13 +5,23 @@
 
 export const RESEARCH_PROJECTS = [
   {
-    id: 'history-book-review',
-    title: 'History Book Review',
-    class: 'History',
+    id: 'project-study',
+    title: 'Project Study',
+    class: 'Project Study',
     status: 'not-started',
+    dueDate: null,
+    description: 'Independent research project — core of the MJSP program.',
+    notes: 'History class methodology connects directly to this. Think methodologically.',
+    sources: [],
+  },
+  {
+    id: 'history-book-review',
+    title: 'History Book Review — Dusinberre',
+    class: 'History',
+    status: 'in-progress',
     dueDate: '2026-06-23',
-    description: 'Book not yet chosen. Proposal must include the main argument and key evidence.',
-    notes: '',
+    description: 'Dusinberre, Mooring the Global Archive (Cambridge UP, 2023). Proposal due Jun 23 — book argument + most important evidence.',
+    notes: 'PDF in Google Drive. Start reading Preface + Ch.1 by May 18.',
     sources: [],
   },
   {

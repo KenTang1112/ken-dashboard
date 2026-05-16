@@ -1,13 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { DEADLINES, TYPE_COLORS } from '../data/deadlines';
-import { TIMETABLE, PERIODS } from '../data/schedule';
+import { PERIODS } from '../data/schedule';
 import { JLPT_SECTIONS } from '../data/jlpt';
 import { RESEARCH_PROJECTS, STATUS_META } from '../data/research';
-import { KANJI_LS_KEYS, QUIZ_SCHEDULE, getWeaknessScores, getKanjiProgress } from '../data/kanji';
+import { KANJI_LS_KEYS, QUIZ_SCHEDULE, getWeaknessScores } from '../data/kanji';
 import { getNotes, addNote } from '../data/notes';
 import { fetchNews } from '../data/news';
 import { useFinanceAuth } from '../context/FinanceAuthContext';
+import { useUser } from '../context/UserContext';
+import { classColor } from '../utils/classColor';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -17,10 +19,7 @@ function daysUntil(dateStr) {
   return Math.ceil((new Date(dateStr) - today) / (1000 * 60 * 60 * 24));
 }
 
-function todayClasses() {
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  return TIMETABLE[days[new Date().getDay()]] || [];
-}
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
 function CountdownBadge({ days }) {
   if (days < 0)   return <span className="badge badge-done">Done</span>;
@@ -59,9 +58,9 @@ function toMonthly(amount, freq) {
 
 function fmt(n) { return '¥' + (Number(n) || 0).toLocaleString(); }
 
-function loadFinanceSummary() {
+function loadFinanceSummary(getItem) {
   try {
-    const s = localStorage.getItem('ken_finance_v2');
+    const s = getItem('finance_v2');
     if (!s) return null;
     const { income = [], fixed = [] } = JSON.parse(s);
     const totalIncome = income.reduce((a, r) => a + toMonthly(r.amount, r.frequency), 0);
@@ -141,27 +140,36 @@ function WidgetCard({ to, icon, title, children }) {
 }
 
 function ScheduleWidget() {
-  const schedule = todayClasses();
-  const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+  const { activeUser, getItem } = useUser();
+  const dayName  = DAY_NAMES[new Date().getDay()];
+  const dayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+
+  const schedule = useMemo(() => {
+    try {
+      const raw = getItem('schedule');
+      if (!raw) return [];
+      const grid = JSON.parse(raw);
+      return PERIODS
+        .map(p => ({ period: p, name: grid[`${dayName}_${p.id}`] }))
+        .filter(x => x.name);
+    } catch { return []; }
+  }, [activeUser, dayName]);
 
   return (
-    <WidgetCard to="/schedule" icon="📅" title={`Schedule — ${dayName}`}>
+    <WidgetCard to="/schedule" icon="📅" title={`Schedule — ${dayShort}`}>
       {schedule.length === 0 ? (
         <p className="empty-state">No classes today</p>
       ) : (
         <div className="today-schedule">
-          {schedule.map((item, i) => {
-            const period = PERIODS.find(p => p.id === item.period);
-            return (
-              <div key={i} className="schedule-item">
-                <div className="schedule-dot" style={{ background: item.color }} />
-                <div>
-                  <div className="schedule-class">{item.short}</div>
-                  <div className="schedule-time">{period?.time}</div>
-                </div>
+          {schedule.map(({ period, name }) => (
+            <div key={period.id} className="schedule-item">
+              <div className="schedule-dot" style={{ background: classColor(name) }} />
+              <div>
+                <div className="schedule-class">{name}</div>
+                <div className="schedule-time">{period.time}</div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
     </WidgetCard>
@@ -333,7 +341,8 @@ function NewsWidget() {
 
 function FinanceWidget() {
   const { authenticated } = useFinanceAuth();
-  const summary = authenticated ? loadFinanceSummary() : null;
+  const { getItem } = useUser();
+  const summary = authenticated ? loadFinanceSummary(getItem) : null;
 
   return (
     <Link to="/finance" className="widget-card widget-card-finance">

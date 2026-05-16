@@ -1,5 +1,8 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { FinanceAuthProvider, useFinanceAuth } from './context/FinanceAuthContext';
+import { UserProvider, useUser } from './context/UserContext';
+import { getAvatar } from './data/avatars';
+import ProfilePicker from './pages/ProfilePicker';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
 import Deadlines from './pages/Deadlines';
@@ -28,10 +31,11 @@ const NAV = [
 ];
 
 function Sidebar() {
+  const { activeUser } = useUser();
   return (
     <nav className="sidebar">
       <div className="sidebar-header">
-        <span className="sidebar-logo">KEN</span>
+        <span className="sidebar-logo">{activeUser?.toUpperCase() ?? 'KEN'}</span>
         <span className="sidebar-sub">Dashboard</span>
       </div>
       <ul className="sidebar-nav">
@@ -70,7 +74,25 @@ function MobileNav() {
   );
 }
 
-// Redirects to /finance/unlock if not authenticated, preserving the intended destination
+function UserSwitchButton() {
+  const { activeUser, logout } = useUser();
+  const avatarId = localStorage.getItem(`${activeUser}_avatar`) || 'fox';
+  const av = getAvatar(avatarId);
+  return (
+    <button className="user-switch-btn" onClick={logout} title="Switch profile">
+      <div style={{
+        width: 24, height: 24, borderRadius: '50%',
+        background: av.bg, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', fontSize: 13, flexShrink: 0,
+      }}>
+        {av.emoji}
+      </div>
+      <span className="user-switch-name">{activeUser}</span>
+      <span className="user-switch-icon">⇄</span>
+    </button>
+  );
+}
+
 function FinanceRoute({ children }) {
   const { authenticated } = useFinanceAuth();
   const location = useLocation();
@@ -80,33 +102,45 @@ function FinanceRoute({ children }) {
   return children;
 }
 
-export default function App() {
+function AppContent() {
+  const { activeUser } = useUser();
+
+  if (!activeUser) return <ProfilePicker />;
+
   return (
     <FinanceAuthProvider>
-      <BrowserRouter>
-        <div className="app-layout">
-          <Sidebar />
-          <main className="main-content">
-            <Routes>
-              <Route path="/"          element={<Dashboard />} />
-              <Route path="/schedule"  element={<Schedule />} />
-              <Route path="/deadlines" element={<Deadlines />} />
-              <Route path="/classes"   element={<Classes />} />
-              <Route path="/kanji"     element={<Kanji />} />
-              <Route path="/jlpt"      element={<JLPT />} />
-              <Route path="/research"  element={<Research />} />
-              <Route path="/notes"     element={<Notes />} />
-              {/* Finance — PIN protected */}
-              <Route path="/finance/unlock" element={<PinLock />} />
-              <Route path="/finance" element={<FinanceRoute><FinanceOverview /></FinanceRoute>} />
-              <Route path="/finance/tracker" element={<FinanceRoute><FinanceTracker /></FinanceRoute>} />
-              <Route path="/finance/investments" element={<FinanceRoute><FinanceInvestments /></FinanceRoute>} />
-              <Route path="/finance/news" element={<FinanceNews />} />
-            </Routes>
-          </main>
-          <MobileNav />
-        </div>
-      </BrowserRouter>
+      <div className="app-layout">
+        <Sidebar />
+        <UserSwitchButton />
+        <main className="main-content">
+          <Routes>
+            <Route path="/"          element={<Dashboard />} />
+            <Route path="/schedule"  element={<Schedule />} />
+            <Route path="/deadlines" element={<Deadlines />} />
+            <Route path="/classes"   element={<Classes />} />
+            <Route path="/kanji"     element={<Kanji />} />
+            <Route path="/jlpt"      element={<JLPT />} />
+            <Route path="/research"  element={<Research />} />
+            <Route path="/notes"     element={<Notes />} />
+            <Route path="/finance/unlock" element={<PinLock />} />
+            <Route path="/finance" element={<FinanceRoute><FinanceOverview /></FinanceRoute>} />
+            <Route path="/finance/tracker" element={<FinanceRoute><FinanceTracker /></FinanceRoute>} />
+            <Route path="/finance/investments" element={<FinanceRoute><FinanceInvestments /></FinanceRoute>} />
+            <Route path="/finance/news" element={<FinanceNews />} />
+          </Routes>
+        </main>
+        <MobileNav />
+      </div>
     </FinanceAuthProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <UserProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </UserProvider>
   );
 }

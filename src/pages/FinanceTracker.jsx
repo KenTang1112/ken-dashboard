@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import financeData from '../data/finance.json';
 import { useFinanceAuth } from '../context/FinanceAuthContext';
+import { useUser } from '../context/UserContext';
 import { Link } from 'react-router-dom';
-
-const STORAGE_KEY = 'ken_finance_v2';
 const CATEGORIES = ['Food & Groceries','Transport','Utilities','Housing','Phone','Entertainment','Clothing','Health','Investment Transfer','Other'];
 const FREQS = ['monthly','weekly','one-time'];
 
@@ -27,17 +26,17 @@ function seed() {
   };
 }
 
-function load() {
+function load(storageKey) {
   try {
-    const s = localStorage.getItem(STORAGE_KEY);
+    const s = localStorage.getItem(storageKey);
     if (s) return JSON.parse(s);
   } catch {}
   return seed();
 }
 
-function save(data) {
+function save(storageKey, data) {
   const d = { ...data, lastUpdated: new Date().toISOString().slice(0,10) };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+  localStorage.setItem(storageKey, JSON.stringify(d));
   return d;
 }
 
@@ -70,7 +69,9 @@ function buildMarkdown(data, totalIncome, totalFixed, balance) {
 }
 
 export default function FinanceTracker() {
-  const [data, setData] = useState(load);
+  const { activeUser } = useUser();
+  const storageKey = `${activeUser}_finance_v2`;
+  const [data, setData] = useState(() => load(storageKey));
   const [tab, setTab] = useState('income');
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -96,7 +97,7 @@ export default function FinanceTracker() {
   function editVariable(id, f, v) { set('variable', variable.map(r => r.id === id ? { ...r, [f]: v } : r)); }
 
   function handleSave() {
-    const d = save(data);
+    const d = save(storageKey, data);
     setData(d);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

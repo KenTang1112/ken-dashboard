@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFinanceAuth } from '../context/FinanceAuthContext';
-
-const FIN_KEY = 'ken_finance_v2';
+import { useUser } from '../context/UserContext';
 
 function toMonthly(amount, freq) {
   const n = Number(amount) || 0;
@@ -13,9 +12,9 @@ function toMonthly(amount, freq) {
 
 function fmt(n) { return '¥' + (Number(n) || 0).toLocaleString(); }
 
-function loadSummary() {
+function loadSummary(storageKey) {
   try {
-    const s = localStorage.getItem(FIN_KEY);
+    const s = localStorage.getItem(storageKey);
     if (!s) return null;
     const { income = [], fixed = [] } = JSON.parse(s);
     const totalIncome = income.reduce((a, r) => a + toMonthly(r.amount, r.frequency), 0);
@@ -37,6 +36,7 @@ const NAV_CARDS = [
 
 function ChangePinPanel({ onClose }) {
   const NUMPAD = ['1','2','3','4','5','6','7','8','9','del','0','ok'];
+  const { setItem } = useUser();
   const [step, setStep]     = useState('new');   // 'new' | 'confirm'
   const [newPin, setNewPin] = useState([]);
   const [confPin, setConfPin] = useState([]);
@@ -65,7 +65,7 @@ function ChangePinPanel({ onClose }) {
           setNewPin([]);
         } else {
           hashPin(full.join('')).then(h => {
-            localStorage.setItem('ken_pin_hash', h);
+            setItem('pin_hash', h);
             setDone(true);
           });
         }
@@ -113,8 +113,9 @@ function ChangePinPanel({ onClose }) {
 
 export default function FinanceOverview() {
   const { lock } = useFinanceAuth();
+  const { activeUser } = useUser();
   const [changingPin, setChangingPin] = useState(false);
-  const summary = loadSummary();
+  const summary = loadSummary(`${activeUser}_finance_v2`);
 
   return (
     <div className="page">

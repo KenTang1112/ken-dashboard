@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { useUser } from './UserContext';
 
-const STORAGE_KEY = 'ken_pin_hash';
 const SESSION_TIMEOUT = 15 * 60 * 1000;
 const DEFAULT_PIN = '0000';
 
@@ -12,16 +12,22 @@ async function hashPin(pin) {
 }
 
 export function FinanceAuthProvider({ children }) {
+  const { activeUser, getItem, setItem } = useUser();
   const [authenticated, setAuthenticated] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    setAuthenticated(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, [activeUser]);
+
+  useEffect(() => {
+    if (!getItem('pin_hash')) {
       hashPin(DEFAULT_PIN).then(h => {
-        if (!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, h);
+        if (!getItem('pin_hash')) setItem('pin_hash', h);
       });
     }
-  }, []);
+  }, [activeUser, getItem, setItem]);
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -42,7 +48,7 @@ export function FinanceAuthProvider({ children }) {
 
   async function unlock(pin) {
     const hash = await hashPin(pin);
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = getItem('pin_hash');
     if (hash === stored) { setAuthenticated(true); return true; }
     return false;
   }

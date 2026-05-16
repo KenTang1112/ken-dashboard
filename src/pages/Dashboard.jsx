@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { DEADLINES, TYPE_COLORS } from '../data/deadlines';
 import { PERIODS } from '../data/schedule';
-import { JLPT_SECTIONS } from '../data/jlpt';
+import { JLPT_SECTIONS, JLPT_EXAM_DATE } from '../data/jlpt';
 import { RESEARCH_PROJECTS, STATUS_META } from '../data/research';
 import { KANJI_LS_KEYS, QUIZ_SCHEDULE, getWeaknessScores } from '../data/kanji';
 import { getNotes, addNote } from '../data/notes';
@@ -240,17 +240,20 @@ function KanjiWidget() {
 }
 
 function JLPTWidget() {
-  const total = JLPT_SECTIONS.length;
+  const total  = JLPT_SECTIONS.length;
   const active = JLPT_SECTIONS.filter(s => s.status === 'active' || s.status === 'supported').length;
   const done   = JLPT_SECTIONS.filter(s => s.status === 'done').length;
-  const pct = Math.round((done / total) * 100);
+  const pct    = Math.round((done / total) * 100);
+  const examDays = Math.ceil((new Date(JLPT_EXAM_DATE) - new Date().setHours(0,0,0,0)) / 86400000);
 
   return (
     <WidgetCard to="/jlpt" icon="🎯" title="JLPT N2">
       <div className="widget-stat-row">
         <div className="widget-stat">
-          <span className="widget-stat-num">TBD</span>
-          <span className="widget-stat-label">exam date</span>
+          <span className="widget-stat-num" style={{ color: examDays <= 30 ? 'var(--red)' : examDays <= 60 ? 'var(--yellow)' : 'var(--text)' }}>
+            {examDays}d
+          </span>
+          <span className="widget-stat-label">until exam</span>
         </div>
         <div className="widget-stat">
           <span className="widget-stat-num">{pct}%</span>
@@ -262,7 +265,7 @@ function JLPTWidget() {
           <div className="widget-progress-fill" style={{ width: `${pct}%` }} />
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-2)', marginTop: 4 }}>
-          {active} active · {done} done · {total - active - done} not started
+          Jul 5 · {active} active · {done} done · {total - active - done} not started
         </div>
       </div>
     </WidgetCard>

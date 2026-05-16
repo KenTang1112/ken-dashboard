@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { JLPT_SECTIONS, JLPT_RESOURCES, BEST_STUDY_WINDOWS } from '../data/jlpt';
+import { JLPT_SECTIONS, JLPT_RESOURCES, BEST_STUDY_WINDOWS, JLPT_EXAM_DATE } from '../data/jlpt';
 
 const STATUS_LABELS = {
   not_started: 'Not started',
@@ -15,6 +15,12 @@ const STATUS_COLORS = {
   done: '#8B5CF6',
 };
 
+function daysUntil(dateStr) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((new Date(dateStr) - today) / 86400000);
+}
+
 export default function JLPT() {
   const [resources, setResources] = useState(JLPT_RESOURCES.map(r => ({ ...r })));
 
@@ -23,17 +29,24 @@ export default function JLPT() {
   };
 
   const doneCount = resources.filter(r => r.done).length;
+  const examDays  = daysUntil(JLPT_EXAM_DATE);
+  const examLabel = new Date(JLPT_EXAM_DATE).toLocaleDateString('en-US', {
+    weekday: 'short', month: 'long', day: 'numeric', year: 'numeric',
+  });
 
   return (
     <div className="page">
       <div className="page-header">
         <div>
           <h1 className="page-title">JLPT N2</h1>
-          <p className="page-sub">Progress tracker — exam date TBD</p>
+          <p className="page-sub">Progress tracker</p>
         </div>
         <div className="exam-date-badge">
           <span className="exam-date-label">Exam date</span>
-          <span className="exam-date-value">TBD</span>
+          <span className="exam-date-value">{examLabel}</span>
+          <span className="exam-date-countdown">
+            {examDays > 0 ? `${examDays} days away` : examDays === 0 ? 'Today!' : 'Past'}
+          </span>
         </div>
       </div>
 

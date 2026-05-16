@@ -617,6 +617,7 @@ body {
 }
 .exam-date-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
 .exam-date-value { display: block; font-size: 15px; font-weight: 700; margin-top: 2px; }
+.exam-date-countdown { display: block; font-size: 11px; color: var(--accent); font-weight: 600; margin-top: 3px; }
 
 .jlpt-sections { display: flex; flex-direction: column; gap: 10px; }
 

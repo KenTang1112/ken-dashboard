@@ -1,3 +1,5 @@
+export const JLPT_EXAM_DATE = '2026-07-05';
+
 export const JLPT_SECTIONS = [
   { id: 'vocab', label: '語彙 (Vocabulary)', status: 'not_started', notes: 'Identify main study book (新完全マスター or TRY! N2)' },
   { id: 'grammar', label: '文法 (Grammar)', status: 'not_started', notes: '' },

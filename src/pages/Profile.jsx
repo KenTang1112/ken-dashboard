@@ -45,7 +45,7 @@ export default function Profile() {
 
   async function syncAvatar(av) {
     if (!user) return;
-    await setDoc(doc(db, 'users', user.uid), { avatar: av }, { merge: true });
+    await setDoc(doc(db, 'users', user.uid), { avatar: av, profileName: activeUser }, { merge: true });
   }
 
   const isCustom = avatarVal.startsWith('data:');

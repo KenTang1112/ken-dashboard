@@ -1,4 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { useAuth } from '../context/AuthContext';
 import { DEADLINES, TYPE_COLORS, TYPE_LABELS } from '../data/deadlines';
 
 function daysUntil(dateStr) {
@@ -23,26 +26,28 @@ const ALL_CLASSES = [...new Set(DEADLINES.map(d => d.class))].sort();
 const ALL_TYPES = [...new Set(DEADLINES.map(d => d.type))];
 
 export default function Deadlines() {
+  const { user } = useAuth();
   const [filterClass, setFilterClass] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [showPast, setShowPast] = useState(false);
-  const [doneKeys, setDoneKeys] = useState(() => {
-    try {
-      return new Set(JSON.parse(localStorage.getItem('deadlines-done') || '[]'));
-    } catch {
-      return new Set();
-    }
-  });
+  const [doneKeys, setDoneKeys] = useState(new Set());
 
-  function toggleDone(d) {
-    const key = deadlineKey(d);
-    setDoneKeys(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      localStorage.setItem('deadlines-done', JSON.stringify([...next]));
-      return next;
+  const settingsRef = doc(db, 'users', user.uid, 'settings', 'deadlines');
+
+  useEffect(() => {
+    const unsub = onSnapshot(settingsRef, (snap) => {
+      setDoneKeys(new Set(snap.exists() ? (snap.data().done || []) : []));
     });
+    return unsub;
+  }, [user.uid]);
+
+  async function toggleDone(d) {
+    const key = deadlineKey(d);
+    const next = new Set(doneKeys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setDoneKeys(next);
+    await setDoc(settingsRef, { done: [...next] }, { merge: true });
   }
 
   const enriched = useMemo(() =>

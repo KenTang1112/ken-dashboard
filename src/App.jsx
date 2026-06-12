@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { FinanceAuthProvider, useFinanceAuth } from './context/FinanceAuthContext';
 import { UserProvider, useUser } from './context/UserContext';
+import { useAuth } from './context/AuthContext';
 import ProfilePicker from './pages/ProfilePicker';
 import Profile from './pages/Profile';
 import AvatarDisplay from './components/AvatarDisplay';
@@ -12,20 +13,20 @@ import Kanji from './pages/Kanji';
 import JLPT from './pages/JLPT';
 import Research from './pages/Research';
 import Notes from './pages/Notes';
+import Tasks from './pages/Tasks';
 import PinLock from './pages/PinLock';
 import FinanceOverview from './pages/FinanceOverview';
 import FinanceTracker from './pages/FinanceTracker';
 import FinanceInvestments from './pages/FinanceInvestments';
 import FinanceNews from './pages/FinanceNews';
-import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
-import { useAuth } from './context/AuthContext';
 import './index.css';
 
 const NAV = [
   { to: '/',         label: 'Dashboard', icon: '⚡' },
   { to: '/schedule', label: 'Schedule',  icon: '📅' },
   { to: '/deadlines',label: 'Deadlines', icon: '🔴' },
+  { to: '/tasks',    label: 'Tasks',     icon: '✅' },
   { to: '/classes',  label: 'Classes',   icon: '📚' },
   { to: '/kanji',    label: 'Kanji',     icon: '漢' },
   { to: '/jlpt',     label: 'JLPT N2',   icon: '🎯' },
@@ -108,10 +109,8 @@ function FinanceRoute({ children }) {
 }
 
 function AppContent() {
-  const { user } = useAuth();
   const { activeUser } = useUser();
 
-  if (!user) return <Login />;
   if (!activeUser) return <ProfilePicker />;
 
   return (
@@ -124,6 +123,7 @@ function AppContent() {
             <Route path="/"          element={<Dashboard />} />
             <Route path="/schedule"  element={<Schedule />} />
             <Route path="/deadlines" element={<Deadlines />} />
+            <Route path="/tasks"     element={<Tasks />} />
             <Route path="/classes"   element={<Classes />} />
             <Route path="/kanji"     element={<Kanji />} />
             <Route path="/jlpt"      element={<JLPT />} />

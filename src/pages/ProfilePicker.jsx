@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AVATARS } from '../data/avatars';
 import { useUser } from '../context/UserContext';
+import { useAuth } from '../context/AuthContext';
 import AvatarDisplay from '../components/AvatarDisplay';
 
 const USERS = [
@@ -23,14 +24,9 @@ function AvatarPickerModal({ onSelect, onClose }) {
             >
               <div
                 style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: '50%',
-                  background: av.bg,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 28,
+                  width: 60, height: 60, borderRadius: '50%',
+                  background: av.bg, display: 'flex',
+                  alignItems: 'center', justifyContent: 'center', fontSize: 28,
                 }}
               >
                 {av.emoji}
@@ -47,17 +43,29 @@ function AvatarPickerModal({ onSelect, onClose }) {
 
 export default function ProfilePicker() {
   const { switchUser } = useUser();
+  const { user: authUser, signInWithGoogle } = useAuth();
   const [pickingAvatarFor, setPickingAvatarFor] = useState(null);
+  const [signingIn, setSigningIn] = useState(null);
 
   function getStoredAvatar(userId) {
     return localStorage.getItem(`${userId}_avatar`) || null;
   }
 
-  function handleCardClick(user) {
-    if (!getStoredAvatar(user.id)) {
-      setPickingAvatarFor(user.id);
+  async function handleCardClick(profile) {
+    if (!authUser) {
+      setSigningIn(profile.id);
+      try {
+        await signInWithGoogle();
+      } catch {
+        setSigningIn(null);
+        return;
+      }
+      setSigningIn(null);
+    }
+    if (!getStoredAvatar(profile.id)) {
+      setPickingAvatarFor(profile.id);
     } else {
-      switchUser(user.id);
+      switchUser(profile.id);
     }
   }
 
@@ -72,18 +80,22 @@ export default function ProfilePicker() {
     <div className="profile-picker-screen">
       <h1 className="profile-picker-title">Who's studying?</h1>
       <div className="profile-cards">
-        {USERS.map(user => {
-          const avatarVal = getStoredAvatar(user.id) || 'fox';
+        {USERS.map(profile => {
+          const avatarVal = getStoredAvatar(profile.id) || 'fox';
+          const isLoading = signingIn === profile.id;
           return (
             <button
-              key={user.id}
+              key={profile.id}
               className="profile-card"
-              onClick={() => handleCardClick(user)}
+              onClick={() => handleCardClick(profile)}
+              disabled={!!signingIn}
             >
               <div className="profile-avatar-ring">
                 <AvatarDisplay value={avatarVal} size={96} />
               </div>
-              <span className="profile-card-name">{user.displayName}</span>
+              <span className="profile-card-name">
+                {isLoading ? 'Signing in…' : profile.displayName}
+              </span>
             </button>
           );
         })}

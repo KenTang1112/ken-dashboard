@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { FinanceAuthProvider, useFinanceAuth } from './context/FinanceAuthContext';
 import { UserProvider, useUser } from './context/UserContext';
-import { useAuth } from './context/AuthContext';
 import ProfilePicker from './pages/ProfilePicker';
 import Profile from './pages/Profile';
 import AvatarDisplay from './components/AvatarDisplay';
@@ -82,16 +81,10 @@ function MobileNav() {
 
 function UserSwitchButton() {
   const { activeUser, logout } = useUser();
-  const { signOut } = useAuth();
   const avatarVal = localStorage.getItem(`${activeUser}_avatar`) || 'fox';
 
-  async function handleSwitch() {
-    logout();
-    await signOut();
-  }
-
   return (
-    <button className="user-switch-btn" onClick={handleSwitch} title="Sign out">
+    <button className="user-switch-btn" onClick={logout} title="Switch profile">
       <AvatarDisplay value={avatarVal} size={24} />
       <span className="user-switch-name">{activeUser}</span>
       <span className="user-switch-icon">⇄</span>

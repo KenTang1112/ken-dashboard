@@ -17,6 +17,9 @@ import FinanceOverview from './pages/FinanceOverview';
 import FinanceTracker from './pages/FinanceTracker';
 import FinanceInvestments from './pages/FinanceInvestments';
 import FinanceNews from './pages/FinanceNews';
+import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 import './index.css';
 
 const NAV = [
@@ -78,9 +81,16 @@ function MobileNav() {
 
 function UserSwitchButton() {
   const { activeUser, logout } = useUser();
+  const { signOut } = useAuth();
   const avatarVal = localStorage.getItem(`${activeUser}_avatar`) || 'fox';
+
+  async function handleSwitch() {
+    logout();
+    await signOut();
+  }
+
   return (
-    <button className="user-switch-btn" onClick={logout} title="Switch profile">
+    <button className="user-switch-btn" onClick={handleSwitch} title="Sign out">
       <AvatarDisplay value={avatarVal} size={24} />
       <span className="user-switch-name">{activeUser}</span>
       <span className="user-switch-icon">⇄</span>
@@ -98,8 +108,10 @@ function FinanceRoute({ children }) {
 }
 
 function AppContent() {
+  const { user } = useAuth();
   const { activeUser } = useUser();
 
+  if (!user) return <Login />;
   if (!activeUser) return <ProfilePicker />;
 
   return (
@@ -117,12 +129,14 @@ function AppContent() {
             <Route path="/jlpt"      element={<JLPT />} />
             <Route path="/research"  element={<Research />} />
             <Route path="/notes"     element={<Notes />} />
+            <Route path="/profile"   element={<Profile />} />
             <Route path="/finance/unlock" element={<PinLock />} />
-            <Route path="/finance" element={<FinanceRoute><FinanceOverview /></FinanceRoute>} />
-            <Route path="/finance/tracker" element={<FinanceRoute><FinanceTracker /></FinanceRoute>} />
-            <Route path="/finance/investments" element={<FinanceRoute><FinanceInvestments /></FinanceRoute>} />
-            <Route path="/finance/news" element={<FinanceNews />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/finance" element={<FinanceRoute><FinanceOverview /></FinanceRoute>} />
+              <Route path="/finance/tracker" element={<FinanceRoute><FinanceTracker /></FinanceRoute>} />
+              <Route path="/finance/investments" element={<FinanceRoute><FinanceInvestments /></FinanceRoute>} />
+              <Route path="/finance/news" element={<FinanceNews />} />
+            </Route>
           </Routes>
         </main>
         <MobileNav />

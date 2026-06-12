@@ -1855,3 +1855,55 @@ body {
   .avatar-picker-circle { width: 44px; height: 44px; font-size: 20px; }
   .profile-avatar-center { flex-direction: column; align-items: flex-start; }
 }
+
+/* ── Classes CRUD form ───────────────────────────── */
+.class-form { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+.cf-row { display: flex; flex-direction: column; gap: 5px; }
+.cf-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cf-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-2); }
+.cf-req { color: var(--red, #EF4444); }
+.cf-hint { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.cf-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.cf-input:focus { outline: none; border-color: var(--accent); }
+.cf-ta { resize: vertical; min-height: 60px; }
+.cf-colors { display: flex; flex-wrap: wrap; gap: 8px; }
+.cf-dot {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+.cf-dot-sel { border-color: white; box-shadow: 0 0 0 2px var(--accent); }
+.cf-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer; }
+.cf-check input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+.cf-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+
+/* ── Class card action buttons ───────────────────── */
+.cc-action {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0.5;
+  transition: opacity 0.1s;
+}
+.cc-action:hover { opacity: 1; }
+.cc-del:hover { background: rgba(239,68,68,0.15); }
+
+@media (max-width: 480px) {
+  .cf-two-col { grid-template-columns: 1fr; }
+}

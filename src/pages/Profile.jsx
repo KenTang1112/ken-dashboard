@@ -1,6 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { AVATARS } from '../data/avatars';
 import { useUser } from '../context/UserContext';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase';
 import AvatarDisplay from '../components/AvatarDisplay';
 
 function compressImage(file, maxPx = 256) {
@@ -23,16 +26,34 @@ function compressImage(file, maxPx = 256) {
 
 export default function Profile() {
   const { activeUser, getItem, setItem } = useUser();
+  const { user } = useAuth();
   const [avatarVal, setAvatarVal] = useState(() => getItem('avatar') || 'fox');
   const [error, setError] = useState('');
   const [saved, setSaved]  = useState(false);
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    if (!user) return;
+    getDoc(doc(db, 'users', user.uid)).then(snap => {
+      if (snap.exists() && snap.data().avatar) {
+        const av = snap.data().avatar;
+        setItem('avatar', av);
+        setAvatarVal(av);
+      }
+    });
+  }, [user?.uid]);
+
+  async function syncAvatar(av) {
+    if (!user) return;
+    await setDoc(doc(db, 'users', user.uid), { avatar: av }, { merge: true });
+  }
 
   const isCustom = avatarVal.startsWith('data:');
 
   function selectBuiltin(id) {
     setItem('avatar', id);
     setAvatarVal(id);
+    syncAvatar(id);
     flash();
   }
 
@@ -46,6 +67,7 @@ export default function Profile() {
       const dataUrl = await compressImage(file);
       setItem('avatar', dataUrl);
       setAvatarVal(dataUrl);
+      syncAvatar(dataUrl);
       flash();
     } catch {
       setError('Could not process image — try a different file.');
@@ -56,6 +78,7 @@ export default function Profile() {
   function removeCustom() {
     setItem('avatar', 'fox');
     setAvatarVal('fox');
+    syncAvatar('fox');
     flash();
   }
 

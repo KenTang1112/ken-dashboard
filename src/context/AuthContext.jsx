@@ -36,8 +36,6 @@ export function AuthProvider({ children }) {
     await firebaseSignOut(auth);
   }
 
-  if (loading) return <div className="flex items-center justify-center h-screen">Loading…</div>;
-
   return (
     <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
       {children}

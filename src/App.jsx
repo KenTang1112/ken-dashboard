@@ -19,6 +19,7 @@ import FinanceTracker from './pages/FinanceTracker';
 import FinanceInvestments from './pages/FinanceInvestments';
 import FinanceNews from './pages/FinanceNews';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 import './index.css';
 
 const NAV = [
@@ -140,10 +141,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <UserProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </UserProvider>
+    <AuthProvider>
+      <UserProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </UserProvider>
+    </AuthProvider>
   );
 }

@@ -43,7 +43,7 @@ function AvatarPickerModal({ onSelect, onClose }) {
 
 export default function ProfilePicker() {
   const { switchUser } = useUser();
-  const { user: authUser, signInWithGoogle } = useAuth();
+  const { user: authUser, loading: authLoading, signInWithGoogle } = useAuth();
   const [pickingAvatarFor, setPickingAvatarFor] = useState(null);
   const [signingIn, setSigningIn] = useState(null);
 
@@ -94,7 +94,7 @@ export default function ProfilePicker() {
                 <AvatarDisplay value={avatarVal} size={96} />
               </div>
               <span className="profile-card-name">
-                {isLoading ? 'Signing in…' : profile.displayName}
+                {isLoading ? 'Signing in…' : authLoading ? 'Loading…' : profile.displayName}
               </span>
             </button>
           );

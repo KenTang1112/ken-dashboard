@@ -1,35 +1,31 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { DEADLINES, TYPE_COLORS } from '../data/deadlines';
+import { DEADLINES } from '../data/deadlines';
 import { PERIODS } from '../data/schedule';
 import { JLPT_SECTIONS, JLPT_EXAM_DATE } from '../data/jlpt';
-import { RESEARCH_PROJECTS, STATUS_META } from '../data/research';
 import { KANJI_LS_KEYS, QUIZ_SCHEDULE, getWeaknessScores } from '../data/kanji';
-import { getNotes, addNote } from '../data/notes';
-import { fetchNews } from '../data/news';
-import { useFinanceAuth } from '../context/FinanceAuthContext';
+import { addNote } from '../data/notes';
 import { useUser } from '../context/UserContext';
-import { classColor } from '../utils/classColor';
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── Palette for activity cards ────────────────────────────────────────────────
+const CARD_PALETTES = [
+  { bg: '#B3D9D3', text: '#1A3A33' },
+  { bg: '#F8C8D4', text: '#4A1525' },
+  { bg: '#F5E490', text: '#3A3000' },
+  { bg: '#D4C4EC', text: '#2A1F45' },
+  { bg: '#1A1A1A', text: '#FFFFFF' },
+  { bg: '#B3D9D3', text: '#1A3A33' },
+];
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function daysUntil(dateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return Math.ceil((new Date(dateStr) - today) / (1000 * 60 * 60 * 24));
 }
 
-const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-function CountdownBadge({ days }) {
-  if (days < 0)   return <span className="badge badge-done">Done</span>;
-  if (days === 0) return <span className="badge badge-today">Today</span>;
-  if (days <= 3)  return <span className="badge badge-urgent">{days}d</span>;
-  if (days <= 7)  return <span className="badge badge-soon">{days}d</span>;
-  return <span className="badge badge-normal">{days}d</span>;
-}
-
-// Compute streak from session history: assumes each session has a `date` field (YYYY-MM-DD)
 function computeStreak(sessionsRaw) {
   try {
     const sessions = JSON.parse(sessionsRaw || '[]');
@@ -49,102 +45,99 @@ function computeStreak(sessionsRaw) {
   } catch { return 0; }
 }
 
-function toMonthly(amount, freq) {
-  const n = Number(amount) || 0;
-  if (freq === 'weekly') return n * 4;
-  if (freq === 'one-time') return 0;
-  return n;
+// ── Mini Calendar ─────────────────────────────────────────────────────────────
+function MiniCalendar({ scheduleDays }) {
+  const today = new Date();
+  const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+
+  const year  = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDayOfWeek = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells = [];
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAY_LABELS  = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+  const todayDay = today.getDate();
+
+  return (
+    <div>
+      <div className="mini-cal-header">
+        <span className="mini-cal-month-label">{MONTH_NAMES[month]} {year}</span>
+        <div className="mini-cal-controls">
+          <button className="mini-cal-btn" onClick={() => setViewDate(new Date(year, month - 1, 1))}>‹</button>
+          <button className="mini-cal-btn" onClick={() => setViewDate(new Date(year, month + 1, 1))}>›</button>
+        </div>
+      </div>
+      <div className="mini-cal-grid">
+        {DAY_LABELS.map(d => <div key={d} className="mini-cal-day-label">{d}</div>)}
+        {cells.map((day, i) => {
+          const isToday   = day && isCurrentMonth && day === todayDay;
+          const hasEvent  = day && scheduleDays?.has(day) && isCurrentMonth && !isToday;
+          return (
+            <div
+              key={i}
+              className={`mini-cal-cell${isToday ? ' today' : ''}${hasEvent ? ' has-event' : ''}${!day ? ' empty' : ''}`}
+            >
+              {day ?? ''}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
-function fmt(n) { return '¥' + (Number(n) || 0).toLocaleString(); }
-
-function loadFinanceSummary(getItem) {
-  try {
-    const s = getItem('finance_v2');
-    if (!s) return null;
-    const { income = [], fixed = [] } = JSON.parse(s);
-    const totalIncome = income.reduce((a, r) => a + toMonthly(r.amount, r.frequency), 0);
-    const totalFixed  = fixed.reduce((a, r)  => a + toMonthly(r.amount, r.frequency), 0);
-    return { totalIncome, totalFixed, balance: totalIncome - totalFixed };
-  } catch { return null; }
-}
-
-
-// ── Quick Note (preserved from original dashboard) ───────────────────────────
+// ── Quick Note ────────────────────────────────────────────────────────────────
 function QuickNoteWidget() {
   const [input, setInput] = useState('');
   const [saved, setSaved] = useState(false);
-  const [notes, setNotes] = useState(() => getNotes().filter(n => !n.processed).slice(0, 3));
 
   function handleSave() {
     if (!input.trim()) return;
-    const updated = addNote(input);
-    setNotes(updated.filter(n => !n.processed).slice(0, 3));
+    addNote(input);
     setInput('');
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   }
 
-  function handleKey(e) {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSave();
-  }
-
   return (
-    <section className="card span-2" style={{ marginTop: 0 }}>
-      <h2 className="card-title">📝 Quick Note</h2>
+    <div className="dash-quick-note">
       <textarea
-        className="notes-textarea notes-textarea-sm"
+        className="dash-note-input"
         value={input}
         onChange={e => setInput(e.target.value)}
-        onKeyDown={handleKey}
-        placeholder="Quick note — processed by daily routine... (Ctrl+Enter to save)"
+        onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSave(); }}
+        placeholder="Quick note… (⌘+Enter to save)"
         rows={2}
       />
-      <div className="notes-input-row" style={{ marginTop: 6 }}>
-        <button className={`btn-primary${saved?' btn-saved':''}`} onClick={handleSave} disabled={!input.trim()}>
-          {saved ? '✓ Saved' : 'Save Note'}
-        </button>
-        <Link to="/notes" className="card-link" style={{ marginLeft: 'auto' }}>All notes →</Link>
-      </div>
-      {notes.length > 0 && (
-        <div className="widget-notes-list">
-          {notes.map(n => (
-            <div key={n.id} className="widget-note-item">
-              <span className="widget-note-ts">{n.timestamp}</span>
-              <span className="widget-note-text">{n.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
+      <button
+        className={`btn-primary${saved ? ' btn-saved' : ''}`}
+        onClick={handleSave}
+        disabled={!input.trim()}
+        style={{ whiteSpace: 'nowrap', alignSelf: 'stretch', padding: '0 14px' }}
+      >
+        {saved ? '✓' : 'Save'}
+      </button>
+    </div>
   );
 }
 
-// ── Widget Cards ─────────────────────────────────────────────────────────────
-
-function WidgetCard({ to, icon, title, children }) {
-  return (
-    <Link to={to} className="widget-card">
-      <div className="widget-header">
-        <div className="widget-icon-title">
-          <span className="widget-icon">{icon}</span>
-          <span className="widget-title">{title}</span>
-        </div>
-        <span className="widget-arrow">→</span>
-      </div>
-      <div className="widget-body">
-        {children}
-      </div>
-    </Link>
-  );
-}
-
-function ScheduleWidget() {
+// ── Main Dashboard ────────────────────────────────────────────────────────────
+export default function Dashboard() {
+  const today = new Date();
   const { activeUser, getItem } = useUser();
-  const dayName  = DAY_NAMES[new Date().getDay()];
-  const dayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
 
-  const schedule = useMemo(() => {
+  const dayName  = DAY_NAMES[today.getDay()];
+  const dayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][today.getDay()];
+
+  // Today's schedule
+  const todaySchedule = useMemo(() => {
     try {
       const raw = getItem('schedule');
       if (!raw) return [];
@@ -155,282 +148,237 @@ function ScheduleWidget() {
     } catch { return []; }
   }, [activeUser, dayName]);
 
-  return (
-    <WidgetCard to="/schedule" icon="📅" title={`Schedule — ${dayShort}`}>
-      {schedule.length === 0 ? (
-        <p className="empty-state">No classes today</p>
-      ) : (
-        <div className="today-schedule">
-          {schedule.map(({ period, name }) => (
-            <div key={period.id} className="schedule-item">
-              <div className="schedule-dot" style={{ background: classColor(name) }} />
-              <div>
-                <div className="schedule-class">{name}</div>
-                <div className="schedule-time">{period.time}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </WidgetCard>
-  );
-}
-
-function DeadlinesWidget({ upcoming }) {
-  const top3 = upcoming.slice(0, 3);
-  return (
-    <WidgetCard to="/deadlines" icon="🔴" title="Deadlines">
-      <div className="deadline-list">
-        {top3.length === 0
-          ? <p className="empty-state">No upcoming deadlines</p>
-          : top3.map((d, i) => (
-            <div key={i} className="deadline-row">
-              <span className="deadline-dot" style={{ background: TYPE_COLORS[d.type] }} />
-              <span className="deadline-label" style={{ fontSize: 12 }}>{d.label}</span>
-              <CountdownBadge days={d.days} />
-            </div>
-          ))
+  // Days with any class this week (for calendar dots)
+  const scheduleDays = useMemo(() => {
+    const set = new Set();
+    try {
+      const raw = getItem('schedule');
+      if (!raw) return set;
+      const grid = JSON.parse(raw);
+      const weekDays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const now = new Date();
+      weekDays.forEach((dn, di) => {
+        if (PERIODS.some(p => grid[`${dn}_${p.id}`])) {
+          const d = new Date(now);
+          d.setDate(now.getDate() + (di - now.getDay() + 7) % 7);
+          if (d.getMonth() === now.getMonth()) set.add(d.getDate());
         }
-      </div>
-    </WidgetCard>
-  );
-}
+      });
+    } catch {}
+    return set;
+  }, [activeUser]);
 
-function KanjiWidget() {
-  const [data, setData] = useState({ streak: 0, dueCount: 0, totalWords: 0 });
-
+  // Kanji
+  const [kanjiData, setKanjiData] = useState({ streak: 0, dueCount: 0 });
   useEffect(() => {
     const scores = getWeaknessScores();
-    const totalWords = Object.keys(scores).length;
     const dueCount = Object.values(scores).filter(v => v >= 5).length;
-    const sessionRaw = localStorage.getItem(KANJI_LS_KEYS.sessionHistory);
-    const streak = computeStreak(sessionRaw);
-    setData({ streak, dueCount, totalWords });
+    const streak = computeStreak(localStorage.getItem(KANJI_LS_KEYS.sessionHistory));
+    setKanjiData({ streak, dueCount });
   }, []);
 
+  // JLPT
+  const jlptDone  = JLPT_SECTIONS.filter(s => s.status === 'done').length;
+  const jlptTotal = JLPT_SECTIONS.length;
+  const jlptPct   = Math.round((jlptDone / jlptTotal) * 100);
+  const examDays  = Math.ceil((new Date(JLPT_EXAM_DATE) - new Date().setHours(0, 0, 0, 0)) / 86400000);
+  const activeJLPT = JLPT_SECTIONS.filter(s => s.status === 'active' || s.status === 'supported');
+
+  // Next kanji quiz
   const nextQuiz = QUIZ_SCHEDULE.find(q => !q.done && daysUntil(q.date) >= 0);
-  const nextDays = nextQuiz ? daysUntil(nextQuiz.date) : null;
 
-  return (
-    <WidgetCard to="/kanji" icon="漢" title="Kanji">
-      <div className="widget-stat-row">
-        <div className="widget-stat">
-          <span className="widget-stat-num">{data.streak > 0 ? data.streak : '—'}</span>
-          <span className="widget-stat-label">day streak</span>
-        </div>
-        <div className="widget-stat">
-          <span className="widget-stat-num" style={{ color: data.dueCount > 0 ? 'var(--red)' : 'var(--green)' }}>
-            {data.dueCount}
-          </span>
-          <span className="widget-stat-label">due for review</span>
-        </div>
-      </div>
-      {nextQuiz && (
-        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-2)' }}>
-          Next quiz: <strong>{nextQuiz.chapters}</strong>
-          {nextDays != null && (
-            <span style={{ marginLeft: 6 }}>
-              <CountdownBadge days={nextDays} />
-            </span>
-          )}
-        </div>
-      )}
-    </WidgetCard>
-  );
-}
-
-function JLPTWidget() {
-  const total  = JLPT_SECTIONS.length;
-  const active = JLPT_SECTIONS.filter(s => s.status === 'active' || s.status === 'supported').length;
-  const done   = JLPT_SECTIONS.filter(s => s.status === 'done').length;
-  const pct    = Math.round((done / total) * 100);
-  const examDays = Math.ceil((new Date(JLPT_EXAM_DATE) - new Date().setHours(0,0,0,0)) / 86400000);
-
-  return (
-    <WidgetCard to="/jlpt" icon="🎯" title="JLPT N2">
-      <div className="widget-stat-row">
-        <div className="widget-stat">
-          <span className="widget-stat-num" style={{ color: examDays <= 30 ? 'var(--red)' : examDays <= 60 ? 'var(--yellow)' : 'var(--text)' }}>
-            {examDays}d
-          </span>
-          <span className="widget-stat-label">until exam</span>
-        </div>
-        <div className="widget-stat">
-          <span className="widget-stat-num">{pct}%</span>
-          <span className="widget-stat-label">sections done</span>
-        </div>
-      </div>
-      <div style={{ marginTop: 10 }}>
-        <div className="widget-progress-bar">
-          <div className="widget-progress-fill" style={{ width: `${pct}%` }} />
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--text-2)', marginTop: 4 }}>
-          Jul 5 · {active} active · {done} done · {total - active - done} not started
-        </div>
-      </div>
-    </WidgetCard>
-  );
-}
-
-function ResearchWidget() {
-  const activeProjects = RESEARCH_PROJECTS
-    .map(p => ({ ...p, days: p.dueDate ? daysUntil(p.dueDate) : null }))
-    .filter(p => p.status !== 'done')
-    .sort((a, b) => {
-      if (a.days == null) return 1;
-      if (b.days == null) return -1;
-      return a.days - b.days;
-    });
-
-  const current = activeProjects[0] || null;
-  const meta = current ? STATUS_META[current.status] : null;
-
-  return (
-    <WidgetCard to="/research" icon="🔬" title="Research">
-      {current ? (
-        <>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>
-            {current.title}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span className="type-dot" style={{ background: meta?.color }} />
-            <span className="type-label">{meta?.label}</span>
-            {current.days != null && <CountdownBadge days={current.days} />}
-          </div>
-          {current.notes && (
-            <div style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.4 }}>
-              {current.notes}
-            </div>
-          )}
-          {activeProjects.length > 1 && (
-            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
-              +{activeProjects.length - 1} more active
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="empty-state">No active projects</p>
-      )}
-    </WidgetCard>
-  );
-}
-
-function NewsWidget() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchNews(3)
-      .then(data => { setItems(data); setLoading(false); })
-      .catch(()  => { setLoading(false); });
-  }, []);
-
-  return (
-    <WidgetCard to="/finance/news" icon="📰" title="Market News">
-      {loading && <p className="empty-state" style={{ fontSize: 11 }}>Loading…</p>}
-      {!loading && items.length === 0 && <p className="empty-state" style={{ fontSize: 11 }}>Could not load news</p>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {items.map((item, i) => (
-          <div key={i} className="widget-news-row">
-            {item.ticker && <span className="news-ticker" style={{ fontSize: 11 }}>{item.ticker}</span>}
-            <span style={{ flex: 1, fontSize: 12, color: 'var(--text)', lineHeight: 1.3 }}>{item.headline}</span>
-            <span className={`sentiment-tag sentiment-${item.sentiment}`}>{item.sentiment}</span>
-          </div>
-        ))}
-      </div>
-    </WidgetCard>
-  );
-}
-
-function FinanceWidget() {
-  const { authenticated } = useFinanceAuth();
-  const { getItem } = useUser();
-  const summary = authenticated ? loadFinanceSummary(getItem) : null;
-
-  return (
-    <Link to="/finance" className="widget-card widget-card-finance">
-      <div className="widget-header">
-        <div className="widget-icon-title">
-          <span className="widget-icon">💰</span>
-          <span className="widget-title">Finance</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {!authenticated && <span className="widget-lock-badge">🔒 Locked</span>}
-          <span className="widget-arrow">→</span>
-        </div>
-      </div>
-
-      <div className="widget-body">
-        <div className="widget-finance-row">
-          <div className="widget-finance-item">
-            <span className="widget-finance-label">Income</span>
-            <span className={`widget-finance-value${!authenticated ? ' widget-blurred' : ' fsb-green'}`}>
-              {authenticated && summary ? fmt(summary.totalIncome) : '¥●●●●●'}
-            </span>
-          </div>
-          <div className="widget-finance-item">
-            <span className="widget-finance-label">Fixed</span>
-            <span className={`widget-finance-value${!authenticated ? ' widget-blurred' : ' fsb-red'}`}>
-              {authenticated && summary ? fmt(summary.totalFixed) : '¥●●●●●'}
-            </span>
-          </div>
-          <div className="widget-finance-item">
-            <span className="widget-finance-label">Balance</span>
-            <span className={`widget-finance-value${!authenticated ? ' widget-blurred' : (summary?.balance >= 0 ? ' fsb-green' : ' fsb-red')}`}>
-              {authenticated && summary ? fmt(summary.balance) : '¥●●●●●'}
-            </span>
-          </div>
-        </div>
-        {!authenticated && (
-          <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8, textAlign: 'center' }}>
-            Tap to unlock
-          </p>
-        )}
-      </div>
-    </Link>
-  );
-}
-
-// ── Main Dashboard ────────────────────────────────────────────────────────────
-
-export default function Dashboard() {
-  const today = new Date();
-
+  // Upcoming deadlines (14 days)
   const upcoming = useMemo(() =>
     DEADLINES
       .map(d => ({ ...d, days: daysUntil(d.date) }))
-      .filter(d => d.days >= 0)
-      .sort((a, b) => a.days - b.days),
+      .filter(d => d.days >= 0 && d.days <= 14)
+      .sort((a, b) => a.days - b.days)
+      .slice(0, 5),
     []
   );
 
+  const hour = today.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const displayName = activeUser
+    ? activeUser.charAt(0).toUpperCase() + activeUser.slice(1)
+    : 'there';
+
   return (
-    <div className="page">
-      <div className="page-header">
+    <div className="page dash-page">
+      {/* ── Welcome header ── */}
+      <div className="dash-welcome">
         <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-sub">
-            {today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <h1 className="dash-welcome-title">{greeting}, {displayName} 👋</h1>
+          <p className="dash-welcome-sub">
+            {today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
-      </div>
-
-      {/* Widget grid */}
-      <div className="widget-grid">
-        <ScheduleWidget />
-        <DeadlinesWidget upcoming={upcoming} />
-        <KanjiWidget />
-        <JLPTWidget />
-        <ResearchWidget />
-        <NewsWidget />
-        <div className="widget-span-2">
-          <FinanceWidget />
-        </div>
-      </div>
-
-      {/* Quick Note */}
-      <div className="dashboard-grid" style={{ marginTop: 0 }}>
         <QuickNoteWidget />
+      </div>
+
+      {/* ── 2-column layout ── */}
+      <div className="dash-layout">
+
+        {/* Left column */}
+        <div className="dash-left">
+
+          {/* Today's activities */}
+          <section className="dash-section">
+            <h2 className="dash-section-title">
+              Your activities today
+              <span className="dash-count-badge">{todaySchedule.length}</span>
+            </h2>
+            {todaySchedule.length === 0 ? (
+              <p className="empty-state" style={{ padding: '8px 0' }}>No classes scheduled for {dayShort}</p>
+            ) : (
+              <div className="dash-activity-grid">
+                {todaySchedule.map((item, i) => {
+                  const pal = CARD_PALETTES[i % CARD_PALETTES.length];
+                  return (
+                    <Link
+                      key={i}
+                      to="/schedule"
+                      className="dash-activity-card"
+                      style={{ background: pal.bg, color: pal.text }}
+                    >
+                      <div className="dash-activity-arrow">↗</div>
+                      <div className="dash-activity-period">{item.period.time}</div>
+                      <div className="dash-activity-name">{item.name}</div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* Learning progress */}
+          <section className="dash-section">
+            <h2 className="dash-section-title">Learning progress</h2>
+
+            {/* Stat cards */}
+            <div className="dash-stats-grid">
+              <Link to="/kanji" className="dash-stat-card" style={{ background: '#F5E490' }}>
+                <span className="dash-stat-num" style={{ color: '#3A3000' }}>
+                  {kanjiData.streak > 0 ? kanjiData.streak : '—'}
+                </span>
+                <span className="dash-stat-label" style={{ color: '#6B5800' }}>day streak</span>
+                <span className="dash-stat-arrow" style={{ color: '#3A3000' }}>↗</span>
+              </Link>
+              <Link to="/jlpt" className="dash-stat-card" style={{ background: '#B3D9D3' }}>
+                <span className="dash-stat-num" style={{ color: '#1A3A33' }}>{jlptPct}%</span>
+                <span className="dash-stat-label" style={{ color: '#2A5A50' }}>JLPT done</span>
+                <span className="dash-stat-arrow" style={{ color: '#1A3A33' }}>↗</span>
+              </Link>
+              <Link to="/deadlines" className="dash-stat-card" style={{ background: '#D4C4EC' }}>
+                <span className="dash-stat-num" style={{ color: '#2A1F45' }}>{upcoming.length}</span>
+                <span className="dash-stat-label" style={{ color: '#4A3F65' }}>upcoming</span>
+                <span className="dash-stat-arrow" style={{ color: '#2A1F45' }}>↗</span>
+              </Link>
+            </div>
+
+            {/* Progress items */}
+            <div className="dash-progress-list">
+              <Link to="/jlpt" className="dash-progress-item">
+                <div className="dash-progress-meta">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 13 }}>🎯</span>
+                    <span className="dash-progress-category">JLPT N2</span>
+                  </div>
+                  <span className="dash-progress-subtitle">
+                    {jlptDone}/{jlptTotal} sections · {examDays}d to exam
+                  </span>
+                </div>
+                <div className="dash-progress-name">
+                  {activeJLPT[0]?.name ?? 'No active section'}
+                </div>
+                <div className="dash-progress-bar-wrap">
+                  <div className="dash-progress-bar-fill" style={{ width: `${jlptPct}%` }} />
+                </div>
+                <div className="dash-progress-arrow">↗</div>
+              </Link>
+
+              <Link to="/kanji" className="dash-progress-item">
+                <div className="dash-progress-meta">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 13 }}>漢</span>
+                    <span className="dash-progress-category">Kanji</span>
+                  </div>
+                  {kanjiData.dueCount > 0 && (
+                    <span className="dash-progress-subtitle" style={{ color: '#EF4444' }}>
+                      {kanjiData.dueCount} due for review
+                    </span>
+                  )}
+                </div>
+                <div className="dash-progress-name">
+                  {kanjiData.streak > 0
+                    ? `${kanjiData.streak}-day streak`
+                    : nextQuiz
+                    ? `Next quiz: ${nextQuiz.chapters}`
+                    : 'Start a study session'}
+                </div>
+                <div className="dash-progress-bar-wrap">
+                  <div
+                    className="dash-progress-bar-fill"
+                    style={{
+                      width: `${Math.min(100, kanjiData.streak * 10)}%`,
+                      background: kanjiData.dueCount > 0 ? '#EF4444' : undefined,
+                    }}
+                  />
+                </div>
+                <div className="dash-progress-arrow">↗</div>
+              </Link>
+            </div>
+          </section>
+        </div>
+
+        {/* Right column */}
+        <div className="dash-right">
+          <div className="dash-side-card">
+            <h2 className="dash-section-title" style={{ marginBottom: 16 }}>Lesson schedule</h2>
+            <MiniCalendar scheduleDays={scheduleDays} />
+
+            <div className="dash-lesson-list">
+              {upcoming.length === 0 && activeJLPT.length === 0 && (
+                <p className="empty-state" style={{ fontSize: 12 }}>Nothing upcoming in 2 weeks</p>
+              )}
+
+              {upcoming.map((d, i) => (
+                <Link key={i} to="/deadlines" className="dash-lesson-item">
+                  <div className="dash-lesson-icon">📋</div>
+                  <div className="dash-lesson-info">
+                    <span className="dash-lesson-name">{d.label}</span>
+                    {d.subject && <span className="dash-lesson-sub">{d.subject}</span>}
+                  </div>
+                  <span className={`dash-lesson-badge${d.days === 0 ? ' today' : d.days <= 3 ? ' urgent' : ''}`}>
+                    {d.days === 0 ? 'Today' : `${d.days}d`}
+                  </span>
+                </Link>
+              ))}
+
+              {activeJLPT.slice(0, 2).map((s, i) => (
+                <Link key={`jlpt-${i}`} to="/jlpt" className="dash-lesson-item">
+                  <div className="dash-lesson-icon">🎯</div>
+                  <div className="dash-lesson-info">
+                    <span className="dash-lesson-name">{s.name}</span>
+                    <span className="dash-lesson-sub">JLPT N2</span>
+                  </div>
+                  <span className="dash-lesson-badge">{examDays}d</span>
+                </Link>
+              ))}
+
+              {nextQuiz && (
+                <Link to="/kanji" className="dash-lesson-item">
+                  <div className="dash-lesson-icon">漢</div>
+                  <div className="dash-lesson-info">
+                    <span className="dash-lesson-name">{nextQuiz.chapters}</span>
+                    <span className="dash-lesson-sub">Kanji quiz</span>
+                  </div>
+                  <span className="dash-lesson-badge">{daysUntil(nextQuiz.date)}d</span>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

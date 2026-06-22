@@ -2249,11 +2249,94 @@ body {
   border-radius: 50%;
 }
 
-.mini-cal-cell.has-event {
-  background: var(--accent-light);
-  color: var(--accent);
-  font-weight: 600;
+.mini-cal-cell.selected {
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
   border-radius: 50%;
+}
+
+.mini-cal-cell.has-event {
+  position: relative;
+  color: var(--text);
+  font-weight: 600;
+}
+.mini-cal-cell.has-event::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Day deadline list (shown below activity cards) */
+.dash-day-deadlines {
+  margin-top: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.dash-day-deadlines-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-2);
+  margin-bottom: 10px;
+}
+
+.dash-day-deadline-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  transition: background 0.1s;
+}
+.dash-day-deadline-row:last-child { border-bottom: none; }
+.dash-day-deadline-row:hover { opacity: 0.8; }
+
+.dash-day-deadline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dash-day-deadline-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dash-day-deadline-label {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-day-deadline-class {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.dash-day-deadline-type {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Lesson list */

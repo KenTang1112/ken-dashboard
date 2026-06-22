@@ -7,7 +7,8 @@ import { DEADLINES, TYPE_COLORS, TYPE_LABELS } from '../data/deadlines';
 function daysUntil(dateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return Math.ceil((new Date(dateStr) - today) / (1000 * 60 * 60 * 24));
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return Math.ceil((new Date(y, m - 1, d) - today) / (1000 * 60 * 60 * 24));
 }
 
 function CountdownBadge({ days }) {
@@ -32,16 +33,18 @@ export default function Deadlines() {
   const [showPast, setShowPast] = useState(false);
   const [doneKeys, setDoneKeys] = useState(new Set());
 
-  const settingsRef = doc(db, 'users', user.uid, 'settings', 'deadlines');
+  const settingsRef = user ? doc(db, 'users', user.uid, 'settings', 'deadlines') : null;
 
   useEffect(() => {
+    if (!settingsRef) return;
     const unsub = onSnapshot(settingsRef, (snap) => {
       setDoneKeys(new Set(snap.exists() ? (snap.data().done || []) : []));
     });
     return unsub;
-  }, [user.uid]);
+  }, [user?.uid]);
 
   async function toggleDone(d) {
+    if (!settingsRef) return;
     const key = deadlineKey(d);
     const next = new Set(doneKeys);
     if (next.has(key)) next.delete(key);

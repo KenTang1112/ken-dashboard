@@ -21,7 +21,8 @@ const CARD_PALETTES = [
 function daysUntil(dateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return Math.ceil((new Date(dateStr) - today) / (1000 * 60 * 60 * 24));
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return Math.ceil((new Date(y, m - 1, d) - today) / (1000 * 60 * 60 * 24));
 }
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];

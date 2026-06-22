@@ -18,7 +18,8 @@ const STATUS_COLORS = {
 function daysUntil(dateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return Math.ceil((new Date(dateStr) - today) / 86400000);
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return Math.ceil((new Date(y, m - 1, d) - today) / 86400000);
 }
 
 export default function JLPT() {

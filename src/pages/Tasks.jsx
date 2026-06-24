@@ -14,9 +14,10 @@ export default function Tasks() {
   const [group, setGroup] = useState('');
   const inputRef = useRef(null);
 
-  const colRef = collection(db, 'users', user.uid, 'tasks');
+  const colRef = user ? collection(db, 'users', user.uid, 'tasks') : null;
 
   useEffect(() => {
+    if (!colRef) return;
     const unsub = onSnapshot(colRef, snap => {
       setTasks(
         snap.docs
@@ -25,21 +26,22 @@ export default function Tasks() {
       );
     });
     return unsub;
-  }, [user.uid]);
+  }, [user?.uid]);
 
   useEffect(() => {
+    if (!user) return;
     const unsub = onSnapshot(collection(db, 'users', user.uid, 'classes'), snap => {
       setClassNames(snap.docs.map(d => d.data().name).filter(Boolean));
     });
     return unsub;
-  }, [user.uid]);
+  }, [user?.uid]);
 
   const taskGroups = [...new Set(tasks.map(t => t.group).filter(Boolean))];
   const allGroupOptions = [...new Set([...taskGroups, ...classNames])].sort();
 
   async function handleAdd(e) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || !colRef) return;
     await addDoc(colRef, {
       title: title.trim(),
       group: group.trim() || 'General',
@@ -51,10 +53,12 @@ export default function Tasks() {
   }
 
   async function toggle(task) {
+    if (!user) return;
     await updateDoc(doc(db, 'users', user.uid, 'tasks', task.id), { done: !task.done });
   }
 
   async function remove(id) {
+    if (!user) return;
     await deleteDoc(doc(db, 'users', user.uid, 'tasks', id));
   }
 

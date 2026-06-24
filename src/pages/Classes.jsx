@@ -157,9 +157,10 @@ export default function Classes() {
   const [modal, setModal] = useState(null);
   const seededRef = useRef(false);
 
-  const colRef = collection(db, 'users', user.uid, 'classes');
+  const colRef = user ? collection(db, 'users', user.uid, 'classes') : null;
 
   useEffect(() => {
+    if (!colRef) return;
     const unsub = onSnapshot(colRef, (snap) => {
       if (snap.empty && !seededRef.current) {
         seededRef.current = true;
@@ -175,9 +176,10 @@ export default function Classes() {
       setLoading(false);
     }, (err) => { console.error(err); setLoading(false); });
     return unsub;
-  }, [user.uid]);
+  }, [user?.uid]);
 
   async function handleSave(data) {
+    if (!user) return;
     if (modal?.id) {
       const { id, ...rest } = data;
       await updateDoc(doc(db, 'users', user.uid, 'classes', modal.id), rest);
@@ -188,7 +190,7 @@ export default function Classes() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('Delete this class?')) return;
+    if (!user || !window.confirm('Delete this class?')) return;
     await deleteDoc(doc(db, 'users', user.uid, 'classes', id));
   }
 

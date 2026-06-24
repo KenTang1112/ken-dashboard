@@ -67,7 +67,7 @@ function getScheduleForDate(date, getItem) {
 
   // Try localStorage custom schedule first
   try {
-    const raw = getItem('schedule');
+    const raw = getItem('schedule_v2');
     if (raw) {
       const grid = JSON.parse(raw);
       const items = PERIODS

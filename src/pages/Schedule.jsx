@@ -16,22 +16,22 @@ export const PERIODS = [
 ];
 
 const KEN_DEFAULTS = {
-  Monday_1:    'Japanese Expression',
-  Monday_2:    'Japanese Communication',
-  Monday_3:    'Japanese Comprehension',
+  Monday_1:    '中級3やりとり',
+  Monday_2:    '中級3表現',
+  Monday_3:    '中級3理解',
   Monday_4:    'Japanese Culture I',
   Monday_5:    'Career Planning',
-  Tuesday_3:   'History 1',
+  Tuesday_3:   'Japanese History',
   Tuesday_5:   'Political Cartoon',
-  Wednesday_1: 'Japanese Expression',
-  Wednesday_2: 'Japanese Communication',
-  Wednesday_3: 'Japanese Comprehension',
+  Wednesday_1: '中級3やりとり',
+  Wednesday_2: '中級3表現',
+  Wednesday_3: '中級3理解',
   Wednesday_5: 'PE Lecture',
   Thursday_2:  'Intro to Economics',
   Thursday_4:  'Japanese Management',
   Thursday_5:  'Academic Skills',
   Friday_2:    'Intro to Economics',
-  Friday_4:    'Debate',
+  Friday_4:    '運用やりとり³',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -173,12 +173,12 @@ export default function Schedule() {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    const raw = getItem('schedule');
+    const raw = getItem('schedule_v2');
     if (raw) {
       try { setGrid(JSON.parse(raw)); } catch { setGrid({}); }
     } else if (activeUser === 'ken') {
       setGrid(KEN_DEFAULTS);
-      setItem('schedule', JSON.stringify(KEN_DEFAULTS));
+      setItem('schedule_v2', JSON.stringify(KEN_DEFAULTS));
     } else {
       setGrid({});
     }
@@ -186,7 +186,7 @@ export default function Schedule() {
 
   function saveGrid(next) {
     setGrid(next);
-    setItem('schedule', JSON.stringify(next));
+    setItem('schedule_v2', JSON.stringify(next));
   }
 
   function openCell(day, period) {

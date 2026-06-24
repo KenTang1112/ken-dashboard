@@ -27,7 +27,6 @@ const NAV = [
   { to: '/schedule', label: 'Schedule',  icon: '📅' },
   { to: '/deadlines',label: 'Deadlines', icon: '🔴' },
   { to: '/tasks',    label: 'Tasks',     icon: '✅' },
-  { to: '/classes',  label: 'Classes',   icon: '📚' },
   { to: '/kanji',    label: 'Kanji',     icon: '漢' },
   { to: '/jlpt',     label: 'JLPT N2',   icon: '🎯' },
   { to: '/research', label: 'Research',  icon: '🔬' },

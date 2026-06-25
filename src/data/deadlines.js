@@ -46,6 +46,7 @@ export const DEADLINES = [
   { date: '2026-07-22', label: '理解 発表（聴解）', class: '理解', type: 'presentation' },
   { date: '2026-07-22', label: 'PE 期末試験', class: 'PE', type: 'test', urgent: true },
   { date: '2026-07-23', label: 'Academic Skills 最終授業', class: 'Academic Skills', type: 'event' },
+  { date: '2026-07-24', label: 'Econ 期末レポート (in-class — calc + descriptive)', class: 'Econ', type: 'assignment', urgent: true },
   { date: '2026-07-24', label: 'Culture I GC comment (Week 15) by 20:00', class: 'Culture I', type: 'recurring' },
   { date: '2026-07-27', label: '表現 最終レポート締切', class: '表現', type: 'assignment' },
   { date: '2026-07-27', label: '理解 発表（聴解）', class: '理解', type: 'presentation' },

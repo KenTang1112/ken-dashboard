@@ -132,7 +132,7 @@ export const CLASSES = [
     id: 'econ',
     name: 'Intro to Economics',
     english: '経済学入門',
-    days: 'Thu (2nd) + Fri (2nd period, 10:30–12:00)',
+    days: 'Fri (2nd period, 10:30–12:00)',
     ends: 'TBD',
     color: '#EC4899',
     nextTest: null,

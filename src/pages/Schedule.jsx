@@ -27,7 +27,6 @@ const KEN_DEFAULTS = {
   Wednesday_2: '中級3表現',
   Wednesday_3: '中級3理解',
   Wednesday_5: 'PE Lecture',
-  Thursday_2:  'Intro to Economics',
   Thursday_4:  'Japanese Management',
   Thursday_5:  'Academic Skills',
   Friday_2:    'Intro to Economics',

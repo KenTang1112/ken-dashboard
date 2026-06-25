@@ -26,12 +26,11 @@ export const TIMETABLE = {
     { period: 5, class: 'PE Lecture',       short: 'PE',       color: '#84CC16' },
   ],
   Thursday: [
-    { period: 2, class: 'Intro to Economics',   short: 'Econ',       color: '#EC4899' },
     { period: 4, class: 'Japanese Management',  short: 'Management', color: '#14B8A6' },
     { period: 5, class: 'Academic Skills',      short: 'Acad Skills', color: '#A78BFA' },
   ],
   Friday: [
-    { period: 2, class: 'Intro to Economics',   short: 'Econ 確認',  color: '#EC4899' },
+    { period: 2, class: 'Intro to Economics',   short: 'Econ',       color: '#EC4899' },
     { period: 3, class: 'Gym',                  short: 'Gym 💪',     color: '#6B7280', optional: true },
     { period: 4, class: '運用やりとり³',        short: 'Radio/討論', color: '#6366F1' },
   ],
